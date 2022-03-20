@@ -54,6 +54,7 @@ provider:
   environment:
     URL_TABLE: ${self:custom.tableName}
     STAGE: ${opt:stage}
+    DOMAIN_NAME: ${self:custom.customDomain.domainName}
   layers:
     - Ref: PythonRequirementsLambdaLayer
 
@@ -72,6 +73,7 @@ plugins:
   - serverless-python-requirements
   - serverless-api-gateway-throttling
   - serverless-plugin-log-retention
+  - serverless-domain-manager
 
 resources:
   Resources:

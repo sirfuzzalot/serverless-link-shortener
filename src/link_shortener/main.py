@@ -30,7 +30,7 @@ log.addHandler(stream_handler)
 
 prefix = ""
 stage = os.environ.get("STAGE")
-if os.environ.get("AWS_EXECUTION_ENV") and stage:
+if os.environ.get("AWS_EXECUTION_ENV") and stage and not os.environ.get("DOMAIN_NAME"):
     prefix = f"/{stage}"
 
 app = FastAPI(
