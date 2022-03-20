@@ -1,0 +1,21 @@
+{
+  "name": "serverless-link-shortener",
+  "version": "1.0.0",
+  "description": "URL shortening service",
+  "author": "Tom Saunders",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sirfuzzalot/serverless-link-shortener"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "serverless": "^3.7.9",
+    "serverless-api-gateway-throttling": "^1.2.2",
+    "serverless-plugin-log-retention": "^2.0.0",
+    "serverless-python-requirements": "^5.1.0"
+  },
+  "scripts": {
+    "deploy": "cross-env-shell \"serverless deploy --stage $STAGE --region $REGION\""
+  }
+}

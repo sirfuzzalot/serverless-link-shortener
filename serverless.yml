@@ -1,0 +1,107 @@
+service: serverless-link-shortener
+
+frameworkVersion: "3"
+
+custom:
+  # Production switch for stage based conditionals
+  isProd:
+    prod: true
+  # DynamoDB
+  tableName: "url-table-${self:provider.stage}"
+  secondaryIndexName: urls
+  # Python Requirements
+  pythonRequirements:
+    layer: true
+  # API Gateway Throttling
+  apiGatewayThrottling:
+    maxRequestsPerSecond: 60
+    maxConcurrentRequests: 20
+  # Log Retention
+  logRetentionInDays: 1
+  # Custom Domain Name
+  customDomain:
+    domainName: ${env:DOMAIN_NAME}
+    createRoute53Record: true
+    autoDomain: true
+    enabled: ${self:custom.isProd.${opt:stage}, false}
+
+package:
+  patterns:
+    - "!node_modules/**/*"
+    - "!.serverless/**/*"
+    - "!.venv/**/*"
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: ${opt:stage, "dev"}
+  region: ${opt:region}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+          Resource:
+            - Fn::GetAtt: [URLTable, Arn]
+            - Fn::Join:
+                - /
+                - - Fn::GetAtt: [URLTable, Arn]
+                  - index
+                  - ${self:custom.secondaryIndexName}
+  environment:
+    URL_TABLE: ${self:custom.tableName}
+    STAGE: ${opt:stage}
+  layers:
+    - Ref: PythonRequirementsLambdaLayer
+
+functions:
+  api:
+    handler: src.link_shortener.main.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+      - http:
+          path: /{proxy+}
+          method: ANY
+
+plugins:
+  - serverless-python-requirements
+  - serverless-api-gateway-throttling
+  - serverless-plugin-log-retention
+
+resources:
+  Resources:
+    URLTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: url
+            AttributeType: S
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:custom.secondaryIndexName}
+            KeySchema:
+              - AttributeName: url
+                KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.tableName}
+        TimeToLiveSpecification:
+          AttributeName: expiration
+          Enabled: true
+
+    # Associate API Gateway with subdomain

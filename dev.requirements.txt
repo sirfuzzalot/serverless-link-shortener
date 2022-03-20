@@ -1,0 +1,12 @@
+# Code Health
+flake8
+black
+isort
+
+# Deps
+fastapi==0.75.0
+mangum==0.14.1
+uvicorn
+boto3
+boto3-stubs[essential]
+python-dotenv
